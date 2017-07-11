@@ -1,0 +1,79 @@
+
+import scrapy
+from scrapy import Spider
+from scrapy.selector import Selector
+from myscr2.items import HouseItem
+
+class HouseSpider(Spider):
+    name = "house"
+    allowed_domains = ["lianjia.com"]
+    start_urls = ["http://cd.lianjia.com/ershoufang/"]
+    baselink = "http://cd.lianjia.com/ershoufang/pg"
+    k=1
+    def parse(self, response):
+        item = HouseItem()
+
+        table = Selector(response).xpath('//*[@class="sellListContent"]/li')
+        i=0
+        for each in table:
+
+            item['housename'] = each.xpath('//*[@class="sellListContent"]/li/div[1]/div[1]/a/text()').extract()[i]
+            item['houseinfo'] = each.xpath('//*[@class="sellListContent"]/li/div[1]/div[2]/div/text()').extract()[i]
+            item['houseaddress'] = each.xpath('//*[@class="sellListContent"]/li/div[1]/div[3]/div/a/text()').extract()[i]
+            i=i+1
+            yield item
+
+
+        #nextlink = table.xpath('//div[@class="page-box fr"]/div[1]/a[5]/@href').extract()
+        #nextlink = table.xpath('/html/body/div[4]/div[1]/div[7]/div[2]/div/a[5]/@href').extract()[0]
+        #nextlink = table.xpath('//div[@class="page-box fr"]/div[1]/a[5]/@href').extract()
+        #坑之所在，每一页的下一个链接路径格式都一定不同，一定多点几个页面看一下
+        #在传递参数时，尽量处理好了再传递参数，直接写进去也许会有问题。
+
+        self.k = self.k+1
+        nextlink = self.baselink + str(self.k)
+        if self.k<=100:
+            yield scrapy.Request(nextlink, callback=self.parse)
+
+
+
+           yield scrapy.Request(content_link, callback=self.parse_item)
+
+
+
+    def parse_item(self, response):
+
+        item = HouseItem()
+        item['hname'] = response.xpath('/html/body/div[3]/div/div/div[1]/h1/text()').extract()[0]
+        item['hstructure'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[1]/text()').extract()[
+            0]
+        item['hfloor'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[2]/text()').extract()[0]
+        item['harea'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[3]/text()').extract()[0]
+        item['htype'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[4]/text()').extract()[0]
+        item['hinarea'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[5]/text()').extract()[0]
+        item['hbtype'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[6]/text()').extract()[0]
+        item['hfaced'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[7]/text()').extract()[0]
+        item['hbstructure'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[8]/text()').extract()[0]
+        item['hdecoration'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[9]/text()').extract()[0]
+        item['helevatorrange'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[10]/text()').extract()[0]
+        item['helevator'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[11]/text()').extract()[0]
+        item['hrights'] = response.xpath('//*[@id="introduction"]/div/div/div[1]/div[2]/ul/li[12]/text()').extract()[0]
+
+        item['hlisttime'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[1]/text()').extract()[0]
+        item['hlisttype'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[2]/text()').extract()[0]
+        item['hlasttime'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[3]/text()').extract()[0]
+        item['huse'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[4]/text()').extract()[0]
+        item['hholdtime'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[5]/text()').extract()[0]
+        item['hrightshold'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[6]/text()').extract()[0]
+        item['hplege'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[7]/span[2]/text()').extract()[0]
+        item['hphoto'] = response.xpath('//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[8]/text()').extract()[0]
+
+        #item['hkeypoint'] = response.xpath('/html/body/div[7]/div[1]/div[2]/div/div[2]/div[2]/text()').extract()[0]
+        item['hkeypoint'] = response.xpath('//*[@class="introContent showbasemore"]/div[2]/div[2]/text()').extract()[0]
+        item['htaxpay'] = response.xpath('//*[@class="introContent showbasemore"]/div[3]/div[2]/text()').extract()[0]
+        item['hdecorationinfo'] = response.xpath('//*[@class="introContent showbasemore"]/div[4]/div[2]/text()').extract()[0]
+        item['hyardinfo'] = response.xpath('//*[@class="introContent showbasemore"]/div[5]/div[2]/text()').extract()[0]
+        #item['htypeinfo'] = response.xpath('//*[@class="introContent showbasemore"]/div[6]/div[2]/text()').extract()[0]
+        #此处需要写一个判断，因为情况不唯一
+
+        yield item
